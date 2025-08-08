@@ -1,18 +1,22 @@
 <?php
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Agent;
+use App\Models\PrismaUser;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
+        $loginUser = $request->user();
 
-        // Ambil Agent milik user dari DB Prisma (kolom ownerId -> User.id (uuid string))
+        // Cari id user di tabel Prisma berdasarkan email login
+        $prismaUserId = PrismaUser::where('email', $loginUser->email)->value('id');
+
+        // Ambil Agent milik user dari DB Prisma (kolom ownerId -> PrismaUser.id)
         $agents = Agent::query()
-            ->where('ownerId', $user->id)
+            ->where('ownerId', $prismaUserId)
             ->orderBy('createdAt', 'desc')
             ->get();
 
