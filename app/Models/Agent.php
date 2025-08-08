@@ -7,6 +7,11 @@ use App\Casts\PgArray;
 
 class Agent extends Model
 {
+    /**
+     * Use the Postgres connection defined in config/database.php.
+     */
+    protected $connection = 'pgsql';
+
     protected $table = 'Agent'; // ganti jika tabelmu bukan ini
     protected $primaryKey = 'id';
     public $incrementing = false;
