@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\PrismaUser;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -40,6 +42,16 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // Mirror the user in the Prisma-managed Postgres database
+        PrismaUser::firstOrCreate(
+            ['email' => $request->email],
+            [
+                'id' => (string) Str::uuid(),
+                'name' => $request->name,
+                'createdAt' => now(),
+            ]
+        );
 
         event(new Registered($user));
 
