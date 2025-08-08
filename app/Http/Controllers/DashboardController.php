@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PrismaUser;
+use App\Models\Agent;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -15,8 +16,13 @@ class DashboardController extends Controller
             ->where('email', $loginUser->email)
             ->first();
 
-        // Agents owned by the authenticated user
-        $agents = $prismaUser?->agents?->sortByDesc('createdAt') ?? collect();
+        if ($prismaUser) {
+            // Agents owned by the authenticated user
+            $agents = $prismaUser->agents->sortByDesc('createdAt');
+        } else {
+            // Fall back to listing all agents
+            $agents = Agent::orderByDesc('createdAt')->get();
+        }
 
         return view('dashboard', compact('agents'));
     }
