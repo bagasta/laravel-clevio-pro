@@ -25,4 +25,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/agents/{agent}/edit', [AgentController::class, 'edit'])->name('agents.edit');
     Route::put('/agents/{agent}', [AgentController::class, 'update'])->name('agents.update');
     Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])->name('agents.destroy');
+    Route::post('/agents/{agent}/run', [AgentController::class, 'run'])->name('agents.run');
 });

@@ -6,13 +6,14 @@
   <div class="max-w-7xl mx-auto p-6 lg:p-8 space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Clevio PRO — Manage Agent</h1>
-      <a href="#" class="px-3 py-2 border rounded">Add New Agent</a>
+      <!-- <a href="#" class="px-3 py-2 border rounded">Add New Agent</a> -->
     </div>
 
     <div class="overflow-x-auto border rounded">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-left">
           <tr>
+            <th class="p-3">Agent ID</th>
             <th class="p-3">Agent Name</th>
             <th class="p-3">Instruction</th>
             <th class="p-3">Model</th>
@@ -31,6 +32,7 @@
         <tbody>
           @forelse ($agents as $a)
             <tr class="border-t align-top">
+              <td class="p-3 font-mono text-xs break-words">{{ $a->id }}</td>
               <td class="p-3 font-medium break-words">{{ $a->name }}</td>
               <td class="p-3 break-words">{{ $a->systemMessage }}</td>
               <td class="p-3 break-words">{{ $a->modelName }}</td>
@@ -41,6 +43,19 @@
               <td class="p-3 break-words">{{ $a->agentType }}</td>
               <td class="p-3 break-words">{{ optional($a->createdAt)->format('Y-m-d') }}</td>
               <td class="p-3 text-right space-x-2">
+                <button
+                  type="button"
+                  class="inline-block text-indigo-600 hover:text-indigo-800 btn-bubble-chat"
+                  data-agent-id="{{ $a->id }}"
+                  data-agent-name="{{ $a->name }}"
+                  data-run-url="https://lfzlwlbz-8000.asse.devtunnels.ms/agents/{{ $a->id }}/run"
+                  title="Bubble Chat"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3h6.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="sr-only">Bubble Chat</span>
+                </button>
                 <button class="inline-block text-green-600 hover:text-green-800" title="Run">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.25v13.5L18 12 5.25 5.25z" />
@@ -68,7 +83,7 @@
             </tr>
           @empty
             <tr>
-              <td class="p-6" colspan="8">Belum ada agent.</td>
+              <td class="p-6" colspan="9">Belum ada agent.</td>
             </tr>
           @endforelse
         </tbody>

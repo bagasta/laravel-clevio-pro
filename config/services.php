@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'agent_service' => [
+        'base_url' => env('AGENT_RUN_BASE_URL', 'https://lfzlwlbz-8000.asse.devtunnels.ms'),
+        'openai_api_key' => env('OPENAI_API_KEY'),
+    ],
+
 ];

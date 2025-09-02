@@ -3,13 +3,13 @@ import { createChat } from '@n8n/chat';
 
 const WEBHOOK = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
 
-window.addEventListener('DOMContentLoaded', () => {
+function initN8nChat() {
   if (!WEBHOOK) return;
   const userId = document.querySelector('meta[name="user-id"]')?.content;
 
   const options = {
     webhookUrl: WEBHOOK,
-    mode: 'float',            // tampil sebagai bubble (pojok kanan bawah)
+    mode: 'float',
     showWelcomeScreen: false,
     loadPreviousSession: true,
   };
@@ -19,4 +19,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   createChat(options);
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', initN8nChat);
+} else {
+  initN8nChat();
+}
