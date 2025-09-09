@@ -1,161 +1,119 @@
-# Clevio PRO — Laravel Breeze + n8n Chat (UI Only)
+# Clevio PRO — Laravel Breeze + n8n Chat UI
 
-Kerangka proyek untuk membuat **Login (Laravel Breeze)** dan **Dashboard UI** yang memuat tabel Agent dari Postgres (skema Prisma) serta **embed chat n8n**. 
-Laravel hanya mengurus **autentikasi** dan **UI**. Data agent dibaca langsung dari DB Postgres kamu (tabel `Agent`).
+Simple Laravel 12 + Breeze app that:
+- Authenticates users with Laravel’s `users` table (SQLite by default).
+- Reads agents from an existing Postgres database (Prisma tables `"User"` and `"Agent"`).
+- Embeds the n8n Chat widget on the dashboard and provides a full chat page per agent.
+- Optionally proxies agent “run/warm” calls to your agent service.
 
-> Login user akan disimpan di **DB yang sama** (Postgres yang sama), namun memakai tabel Laravel `users` bawaan Breeze (tidak bentrok dengan `"User"` milik Prisma).
-
----
-
-## 0) Prasyarat
-- PHP **8.2+**
-- Composer **2+**
-- Node.js **20+** dan npm
-- PostgreSQL (pakai DB yang sama dengan skema Prisma kamu)
-- URL Webhook **n8n** untuk Chat (node **Chat Trigger** aktif, Allowed Origins diisi domain Laravel kamu)
+This README explains how to set it up and run locally.
 
 ---
 
-## 1) Buat project Laravel + Breeze (Blade)
+## Quick Start
 
+1) Prerequisites
+- PHP 8.2+ and Composer 2+
+- Node.js 20+ and npm
+- Postgres (your Prisma database that contains `"User"` and `"Agent"`)
+- An n8n instance with a Chat Trigger webhook URL
+
+2) Install
 ```bash
-# 1. Buat project
-composer create-project laravel/laravel clevio-pro
-cd clevio-pro
+git clone <your-repo-url> clevio-pro-laravel
+cd clevio-pro-laravel
 
-# 2. Install Breeze (Blade)
-composer require laravel/breeze --dev
-php artisan breeze:install blade
-
-# 3. Install dependencies FE
+composer install
 npm install
+
+cp .env.example .env
+php artisan key:generate
 ```
 
-> Referensi Breeze: https://santrikoding.com/tutorial-laravel-breeze
+3) Configure `.env`
+- App URL (dev):
+  - `APP_URL=http://localhost:8000`
 
----
+- Authentication DB (default SQLite):
+  - Keep `DB_CONNECTION=sqlite` (default).
+  - A `database/database.sqlite` file is used for users, cache, and jobs.
 
-## 2) Konfigurasi `.env` (pakai DB Postgres yang sama)
-Edit `.env`:
+- Prisma/Agents DB (Postgres):
+  - Set `DATABASE_URL=postgresql://USER:PASS@HOST:5432/DBNAME` to your Prisma Postgres where `"User"` and `"Agent"` live.
+  - Models `PrismaUser` and `Agent` explicitly use the `pgsql` connection which reads from `DATABASE_URL`.
 
-```env
-APP_NAME="Clevio PRO"
-APP_URL=http://localhost:8000
+- n8n Chat widget:
+  - `VITE_N8N_WEBHOOK_URL="https://your-n8n/webhook/XXXXXXXX/chat"`
+  - In n8n, set Allowed Origins to `http://localhost:8000` (and your production domain later).
 
-# koneksi PG ke DB yang sama dgn Prisma
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=your_db
-DB_USERNAME=your_user
-DB_PASSWORD=your_pass
+- Agent service proxy (optional; enables Run/Warm actions):
+  - `AGENT_RUN_BASE_URL="http://localhost:8000"` or your agent service base URL
+  - `OPENAI_API_KEY="..."` (forwarded to the agent service when running)
 
-# Chat widget n8n
-VITE_N8N_WEBHOOK_URL="https://your-n8n-domain/webhook/XXXXXXXX"
-```
-
-> Breeze akan membuat tabel `users` untuk login. Ini **tidak** mengubah tabel Prisma kamu (`"User"` & `"Agent"`).
-
-Jalankan migrasi untuk tabel `users`:
+4) Migrate and Seed (for auth DB)
 ```bash
 php artisan migrate
+php artisan db:seed   # creates Test User: test@example.com / password
 ```
 
-Opsional, buat user uji:
-```bash
-        php artisan tinker
->>> \App\Models\User::create(['name' => 'Demo', 'email' => 'demo@example.com', 'password' => bcrypt('password')]);
-```
+5) Run in development
+- Easiest: one command that runs PHP server, queue worker, logs, and Vite:
+  ```bash
+  composer run dev
+  ```
+- Or run them individually:
+  ```bash
+  php artisan serve        # http://localhost:8000
+  php artisan queue:listen
+  npm run dev
+  ```
+
+Open http://localhost:8000/login and sign in with:
+- Email: `test@example.com`
+- Password: `password`
+
+Go to http://localhost:8000/dashboard to see agents and the n8n chat bubble.
 
 ---
 
-## 3) Tambahkan paket Chat n8n (widget)
-```bash
-npm i @n8n/chat
-```
+## How Data Is Wired
+- `users` (auth) live in SQLite by default. You may switch `DB_CONNECTION=pgsql` to use Postgres for auth as well if you prefer.
+- `PrismaUser` and `Agent` read from the Postgres connection `pgsql` (configured via `DATABASE_URL`). These expect Prisma tables `"User"` and `"Agent"` to already exist.
+- Agent “Run/Warm” buttons call backend routes that proxy to your agent service at `AGENT_RUN_BASE_URL`.
 
-> Widget ini akan di-embed di dashboard. Kita memakai **Import Embed** sesuai dokumentasi @n8n/chat.
-
----
-
-## 4) Salin kerangka file ini ke project Laravel kamu
-Salin seluruh isi folder `scaffold/` ke root project Laravel (overwrite bila diminta):
-
-```
-scaffold/
-├─ app/Casts/PgArray.php
-├─ app/Http/Controllers/DashboardController.php
-├─ app/Models/Agent.php
-├─ resources/js/chat.js
-├─ resources/views/dashboard.blade.php
-├─ resources/views/layouts/navigation.blade.php   (custom dropdown)
-└─ routes/web.dashboard.php
-```
-
-Setelah menyalin:
-- Merge `routes/web.dashboard.php` ke `routes/web.php` kamu (atau copy isi file ini ke bawah group `auth`).
-- Pastikan `resources/js/app.js` **mengimpor** `./chat.js` (lihat langkah 5).
+Relevant files:
+- config: `config/database.php`, `config/services.php`
+- models: `app/Models/User.php`, `app/Models/PrismaUser.php`, `app/Models/Agent.php`
+- controllers: `app/Http/Controllers/DashboardController.php`, `app/Http/Controllers/AgentController.php`
+- views: `resources/views/dashboard.blade.php`, `resources/views/agents/chat.blade.php`
+- frontend: `resources/js/app.js`, `resources/js/chat.js`, `resources/js/agent-chat-page.js`, `resources/js/agent-bubble.js`
 
 ---
 
-## 5) Wire FE (Vite) untuk Chat Widget
-Tambahkan import berikut di **resources/js/app.js** (paling bawah):
+## n8n Chat Setup
+In your n8n workflow:
+1. Use the Chat Trigger node and activate the workflow.
+2. Copy the Chat webhook URL into `.env` as `VITE_N8N_WEBHOOK_URL`.
+3. Add `http://localhost:8000` to Allowed Origins so the widget can load in dev.
+4. Optional: enable streaming responses.
 
-```js
-import './chat';
-```
-
-Jalankan dev server:
-```bash
-npm run dev
-php artisan serve
-```
-
-Buka `http://localhost:8000/login`, login, lalu ke **Dashboard** (`/dashboard`).
+The widget is initialized from `resources/js/chat.js` and loads automatically on the dashboard if `VITE_N8N_WEBHOOK_URL` is set.
 
 ---
 
-## 6) n8n — Chat Trigger & CORS
-Di workflow n8n kamu:
-1. Gunakan **Chat Trigger** sebagai pemicu.
-2. Aktifkan workflow (**Active**).
-3. Di **Allowed Origins (CORS)** masukkan domain Laravel kamu (mis. `http://localhost:8000` atau domain produksi).
-4. (Opsional) Nyalakan **Streaming responses** untuk efek mengetik.
-
-> Lihat opsi widget & contoh embed di halaman NPM `@n8n/chat`.
-
----
-
-## 7) Build produksi
+## Production
 ```bash
 npm run build
 php artisan config:cache
 php artisan route:cache
 ```
-
-Deploy seperti biasa (Nginx/Apache/Valet/Forge).
-
----
-
-## Catatan Teknis
-- **Agent Model** membaca dari tabel Prisma `"Agent"` (case-sensitive). Jika tabel kamu berbeda (mis. `agents`), ubah properti `$table`.
-- Kolom `tools` bertipe **text[]** di Postgres → dicasting ke array dengan `PgArray`.
-- UI menggunakan Tailwind (sudah ada dari Breeze). Tabel dan layout meniru wireframe di gambar.
-- Tombol **Run / Edit / Delete** hanya placeholder (arahkan ke endpoint n8n jika diperlukan).
-- Untuk mode **fullscreen chat**, ubah `{ mode: 'fullscreen', target: '#n8n-chat' }`.
+Serve via Nginx/Apache and ensure correct `APP_URL`, `DATABASE_URL`, and widget/agent service env vars.
 
 ---
 
-## Struktur yang ditambahkan (ringkas)
-- `DashboardController@index` → query Agent milik user (ownerId = auth()->id())
-- `dashboard.blade.php` → tabel Manage Agent + container `#n8n-chat`
-- `navigation.blade.php` → dropdown **Profile / My Plan / Logout**
+## Troubleshooting
+- No agents listed: verify `DATABASE_URL` points to the Postgres DB that contains Prisma tables `"User"` and `"Agent"`.
+- Chat bubble doesn’t appear: make sure `VITE_N8N_WEBHOOK_URL` is set and your n8n Allowed Origins includes `http://localhost:8000`.
+- Run/Warm fails: set `AGENT_RUN_BASE_URL` and `OPENAI_API_KEY`, and ensure your agent service is reachable. In dev, the full chat page also tries direct calls to `http://localhost:8000` and falls back to the proxy.
 
----
-
-## Referensi
-- @n8n/chat (NPM): https://www.npmjs.com/package/@n8n/chat
-- Chat Trigger node: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-langchain.chattrigger/
-- Tutorial Breeze (Indonesia): https://santrikoding.com/tutorial-laravel-breeze
-
-Selamat membangun! 🎉
+Happy building! 🎉
