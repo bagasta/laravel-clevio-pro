@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Hide n8n chat widget on full chat page */
+body.chat-page #n8n-chat,
+body.chat-page .n8n-chat,
+body.chat-page n8n-chat,
+body.chat-page [data-n8n-chat],
+body.chat-page .n8n-floating-button,
+body.chat-page .n8n-chat-position,
+body.chat-page iframe[src*="n8n"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}

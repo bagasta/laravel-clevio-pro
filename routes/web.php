@@ -22,8 +22,11 @@ require __DIR__.'/auth.php';
 // Dashboard wajib login
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Full chat page per agent
+    Route::get('/agents/{agent}/chat', [AgentController::class, 'chat'])->name('agents.chat');
     Route::get('/agents/{agent}/edit', [AgentController::class, 'edit'])->name('agents.edit');
     Route::put('/agents/{agent}', [AgentController::class, 'update'])->name('agents.update');
     Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])->name('agents.destroy');
+    Route::post('/agents/{agent}/warm', [AgentController::class, 'warm'])->name('agents.warm');
     Route::post('/agents/{agent}/run', [AgentController::class, 'run'])->name('agents.run');
 });

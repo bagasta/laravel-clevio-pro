@@ -114,14 +114,11 @@ function initAgentBubble() {
   document.body.addEventListener('click', (e) => {
     const btn = e.target.closest('.btn-bubble-chat');
     if (!btn) return;
-    // Reset messages when opening for a new agent
-    messages.innerHTML = '';
     const agentId = btn.getAttribute('data-agent-id');
-    const agentName = btn.getAttribute('data-agent-name') || '';
-    const runUrl = btn.getAttribute('data-run-url') || '';
-    // Prefer explicit URL from button; fallback to backend proxy
-    root.dataset.runUrl = runUrl || `/agents/${encodeURIComponent(agentId)}/run`;
-    showBubble(agentId, agentName);
+    // Prefer navigating to full chat page in a new tab
+    const chatUrl = btn.getAttribute('data-chat-url') || `/agents/${encodeURIComponent(agentId)}/chat`;
+    window.open(chatUrl, '_blank');
+    return;
   });
 
   form.addEventListener('submit', async (e) => {
